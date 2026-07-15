@@ -56,7 +56,10 @@
   tbody td { padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
   tbody tr:last-child td { border-bottom: none; }
   tbody tr:hover { background: var(--row-hover); }
-  td.port { font-weight: 600; font-variant-numeric: tabular-nums; }
+  td.port { font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  td.port a { color: inherit; text-decoration: none; border-bottom: 1px dotted var(--muted); }
+  td.port a:hover { border-bottom-style: solid; }
+  .http { color: var(--active-fg); font-size: 12px; }
   .cmd { font-weight: 500; }
   .args { color: var(--muted); font-size: 12px; max-width: 380px; overflow: hidden;
           text-overflow: ellipsis; white-space: nowrap; }
@@ -105,7 +108,7 @@
   <table>
     <thead>
       <tr>
-        <th>Port</th><th>Process</th><th>PID</th><th>Bind</th>
+        <th>Localhost</th><th>What's running</th><th>PID</th>
         <th>Uptime</th><th>Conns</th><th>CPU%</th><th>Status</th><th></th>
       </tr>
     </thead>
@@ -139,7 +142,7 @@ function render() {
   const rows = data.ports.filter((r) => {
     if (filter !== 'all' && r.status !== filter) return false;
     if (!q) return true;
-    return [r.port, r.pid, r.command, r.args, r.user].join(' ').toLowerCase().includes(q);
+    return [r.port, r.pid, r.command, r.args, r.user, r.http].join(' ').toLowerCase().includes(q);
   });
 
   const counts = { active: 0, pending: 0, stale: 0 };
@@ -152,7 +155,7 @@ function render() {
     `stale = up over ${data.staleHours}h or stuck (not accepting connections)`;
 
   if (rows.length === 0) {
-    $('#rows').innerHTML = '<tr><td colspan="9" class="empty">No ports match.</td></tr>';
+    $('#rows').innerHTML = '<tr><td colspan="8" class="empty">No ports match.</td></tr>';
     return;
   }
 
@@ -164,11 +167,13 @@ function render() {
            data-port="${r.port}" ${r.killable && !killing.has(key) ? '' : 'disabled'}
            title="${r.killable ? 'Send SIGTERM' : 'Owned by ' + esc(r.user) + ' — not killable'}">
            ${killing.has(key) ? '…' : 'Kill'}</button>`;
+    const httpLine = r.http ? `<div class="http">${esc(r.http)}</div>` : '';
     return `<tr>
-      <td class="port">${r.port}</td>
-      <td><div class="cmd">${esc(r.command)}</div><div class="args" title="${esc(r.args)}">${esc(r.args)}</div></td>
+      <td class="port"><a href="http://localhost:${r.port}" target="_blank"
+          title="bound to ${esc(r.addrs.join(', '))}">localhost:${r.port}</a></td>
+      <td><div class="cmd">${esc(r.command)}</div>${httpLine}
+          <div class="args" title="${esc(r.args)}">${esc(r.args)}</div></td>
       <td class="num">${r.pid}</td>
-      <td class="num">${esc(r.addrs.join(', '))}</td>
       <td class="num">${fmtUptime(r.uptimeSec)}</td>
       <td class="num">${r.connections}</td>
       <td class="num">${r.cpu.toFixed(1)}</td>

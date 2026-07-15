@@ -1,13 +1,13 @@
 # local-port-manager
 
-A tiny local web UI to see which TCP ports are listening on your machine, what
-state they're in, and to kill the processes holding them. Zero dependencies —
-just Node.js and the system `lsof`/`ps` (macOS or Linux).
+A tiny web UI that answers "what is running at `localhost:<port>`?" — and lets
+you kill it. Written in Go with zero third-party dependencies; scanning uses
+the system `lsof`/`ps` (macOS or Linux).
 
 ## Run
 
 ```sh
-npm start          # or: node server.js
+go build -o port-manager . && ./port-manager
 ```
 
 Then open <http://localhost:4321>.
@@ -19,16 +19,27 @@ Environment variables:
 | `PORT`        | `4321`  | Port the manager UI itself listens on    |
 | `STALE_HOURS` | `24`    | Uptime threshold before a port is stale  |
 
+## What it shows
+
+Only listeners actually reachable at `localhost:<port>` (loopback or wildcard
+binds) — things bound solely to external interfaces are ignored. Each port is
+a clickable `localhost:<port>` link, and the manager HTTP-probes every port to
+identify what's serving it (page `<title>`, `Server` header, or redirect
+target), so a row reads like:
+
+> `localhost:3001` · com.docker.backend · **HTTP 200 · Gitea: Git with a cup of tea**
+
 ## Statuses
 
 - **active** — listening and currently in use (has established connections).
 - **pending** — listening but idle: nothing is connected to it yet. Typical
   for dev servers that are still compiling / warming up, or just not visited.
 - **stale** — the owning process has been up for more than 24 h, or the port
-  is stuck: it shows as LISTEN but a TCP health probe can't actually connect
+  is stuck: it shows as LISTEN but a TCP probe can't actually connect
   (e.g. the process is wedged on an error).
 
-Each row shows the reason for its status under the badge.
+Each row shows the reason for its status under the badge. IPv6-only listeners
+(`[::1]`) are probed on the address they're actually bound to.
 
 ## Killing
 
