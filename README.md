@@ -3,19 +3,32 @@
 <img width="1097" height="411" alt="screenshot" src="https://github.com/user-attachments/assets/06fa7eec-fb10-47f5-81eb-dcd38e95245d" />
 
 
-A tiny web UI that answers "what is running at `localhost:<port>`?" — and lets
-you kill it. Written in Go with zero third-party dependencies; scanning uses
-the system `lsof`/`ps` (macOS or Linux).
+A tiny web UI **and terminal UI** that answer "what is running at
+`localhost:<port>`?" — and let you kill it. Written in Go; scanning uses the
+system `lsof`/`ps` (macOS or Linux). The web server is stdlib-only; the
+terminal UI is built on [Bubble Tea](https://github.com/charmbracelet/bubbletea).
 
 ## Run
 
-Requires Go 1.22+.
+Requires Go 1.24+.
 
 ```sh
 go build -o localhost-manager . && ./localhost-manager
 ```
 
 Then open <http://localhost:4321>.
+
+The same binary is also a terminal client — no server needed:
+
+```sh
+localhost-manager tui          # interactive TUI: browse, filter, kill
+localhost-manager list         # print the port table once (pipe-friendly)
+localhost-manager kill 3000    # SIGTERM whatever holds port 3000 (--force → SIGKILL)
+```
+
+In the TUI: `↑/↓`/`j/k` move, `x` kills the selected process (confirm prompt;
+offers SIGKILL if it survives SIGTERM), `/` filters as you type, `tab`/`1–4`
+switch status filters, `r` refreshes (also auto-refreshes every 5 s), `q` quits.
 
 Environment variables:
 
@@ -51,8 +64,9 @@ Each row shows the reason for its status under the badge. IPv6-only listeners
 
 ## Killing
 
-The **Kill** button sends `SIGTERM`; if the process survives, you're offered a
-`SIGKILL` follow-up. Safety rails:
+The **Kill** button (web), `x` (TUI), and `kill <port>` (CLI) all send
+`SIGTERM`; if the process survives, you're offered a `SIGKILL` follow-up.
+Safety rails:
 
 - Only processes owned by your own user can be killed.
 - The manager won't kill itself (its own row is marked "this app").
