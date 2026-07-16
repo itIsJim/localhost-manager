@@ -450,6 +450,11 @@ func writeJSON(w http.ResponseWriter, code int, v any) {
 }
 
 func main() {
+	if len(os.Args) > 1 {
+		cliMain(os.Args[1:])
+		return
+	}
+
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
