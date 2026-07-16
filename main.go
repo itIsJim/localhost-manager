@@ -20,6 +20,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"os/user"
@@ -405,6 +406,43 @@ func killPID(pid int, force bool) (*killResult, error) {
 // HTTP server
 // ---------------------------------------------------------------------------
 
+// isLocalName reports whether a Host/Origin hostname is a loopback name.
+func isLocalName(host string) bool {
+	h, _, err := net.SplitHostPort(host)
+	if err != nil {
+		h = host
+	}
+	h = strings.Trim(h, "[]")
+	return h == "localhost" || h == "::1" || strings.HasPrefix(h, "127.")
+}
+
+// guard blocks DNS-rebinding and cross-site requests: the Host header must
+// be a loopback name, and non-GET requests must carry a JSON Content-Type
+// (which forces a CORS preflight in browsers) and, if an Origin header is
+// present, a loopback Origin.
+func guard(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !isLocalName(r.Host) {
+			http.Error(w, "forbidden: non-local Host header", http.StatusForbidden)
+			return
+		}
+		if r.Method != http.MethodGet {
+			if o := r.Header.Get("Origin"); o != "" {
+				u, err := url.Parse(o)
+				if err != nil || !isLocalName(u.Host) {
+					http.Error(w, "forbidden: cross-site request", http.StatusForbidden)
+					return
+				}
+			}
+			if ct, _, _ := strings.Cut(r.Header.Get("Content-Type"), ";"); strings.TrimSpace(ct) != "application/json" {
+				http.Error(w, "expected Content-Type: application/json", http.StatusUnsupportedMediaType)
+				return
+			}
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
 func writeJSON(w http.ResponseWriter, code int, v any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
@@ -447,5 +485,5 @@ func main() {
 
 	addr := fmt.Sprintf("127.0.0.1:%d", listenPort)
 	log.Printf("localhost-manager running at http://localhost:%d", listenPort)
-	log.Fatal(http.ListenAndServe(addr, mux))
+	log.Fatal(http.ListenAndServe(addr, guard(mux)))
 }
