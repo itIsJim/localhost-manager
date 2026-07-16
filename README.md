@@ -1,5 +1,8 @@
 # localhost-manager
 
+<img width="1097" height="411" alt="screenshot" src="https://github.com/user-attachments/assets/06fa7eec-fb10-47f5-81eb-dcd38e95245d" />
+
+
 A tiny web UI that answers "what is running at `localhost:<port>`?" — and lets
 you kill it. Written in Go with zero third-party dependencies; scanning uses
 the system `lsof`/`ps` (macOS or Linux).
