@@ -6,6 +6,8 @@ the system `lsof`/`ps` (macOS or Linux).
 
 ## Run
 
+Requires Go 1.22+.
+
 ```sh
 go build -o localhost-manager . && ./localhost-manager
 ```
@@ -29,6 +31,9 @@ target), so a row reads like:
 
 > `localhost:3001` · com.docker.backend · **HTTP 200 · Gitea: Git with a cup of tea**
 
+The table live-filters as you type (port, process name, PID, …), can be
+narrowed to one status, and auto-refreshes every 5 seconds.
+
 ## Statuses
 
 - **active** — listening and currently in use (has established connections).
@@ -51,4 +56,11 @@ The **Kill** button sends `SIGTERM`; if the process survives, you're offered a
 - The server double-checks that the PID still holds a listening port before
   sending any signal.
 
-The server binds to `127.0.0.1` only, so nothing is exposed to the network.
+## Security
+
+- The server binds to `127.0.0.1` only, so nothing is exposed to the network.
+- Requests with a non-loopback `Host` header are rejected, which blocks DNS
+  rebinding.
+- Write requests must be `Content-Type: application/json` (so browsers force a
+  CORS preflight) and any `Origin` header must be loopback — a random webpage
+  you visit can't POST to `/api/kill`.
