@@ -1,4 +1,4 @@
-# local-port-manager
+# localhost-manager
 
 A tiny web UI that answers "what is running at `localhost:<port>`?" — and lets
 you kill it. Written in Go with zero third-party dependencies; scanning uses
@@ -7,7 +7,7 @@ the system `lsof`/`ps` (macOS or Linux).
 ## Run
 
 ```sh
-go build -o port-manager . && ./port-manager
+go build -o localhost-manager . && ./localhost-manager
 ```
 
 Then open <http://localhost:4321>.

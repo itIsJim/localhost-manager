@@ -1,4 +1,4 @@
-// local-port-manager — see what's running behind localhost:<port> and manage it.
+// localhost-manager — see what's running behind localhost:<port> and manage it.
 //
 // Zero third-party dependencies. Scans with `lsof` + `ps` (macOS/Linux),
 // keeps only listeners reachable at localhost, classifies each as
@@ -446,6 +446,6 @@ func main() {
 	})
 
 	addr := fmt.Sprintf("127.0.0.1:%d", listenPort)
-	log.Printf("local-port-manager running at http://localhost:%d", listenPort)
+	log.Printf("localhost-manager running at http://localhost:%d", listenPort)
 	log.Fatal(http.ListenAndServe(addr, mux))
 }
